@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-from vanna.remote import VannaDefault
+from vanna import VannaDefault
 
 app = FastAPI()
 
