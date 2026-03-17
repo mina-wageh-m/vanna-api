@@ -1,20 +1,11 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-import vanna
-from vanna.openai import OpenAI_Chat
-from vanna.chromadb import ChromaDB_VectorStore
-
-class MyVanna(ChromaDB_VectorStore, OpenAI_Chat):
-    def __init__(self, config=None):
-        ChromaDB_VectorStore.__init__(self, config=config)
-        OpenAI_Chat.__init__(self, config=config)
-
-vn = MyVanna(config={
-    'api_key': 'vn-071c62b7ef4e4fe38fa7ae09a631dbee',
-    'model': 'Virtu'
-})
+import requests
 
 app = FastAPI()
+
+VANNA_API_KEY = "vn-071c62b7ef4e4fe38fa7ae09a631dbee"
+VANNA_MODEL = "virtu"
 
 class Question(BaseModel):
     question: str
@@ -26,14 +17,23 @@ def root():
 @app.post("/ask")
 def ask(q: Question):
     try:
-        sql = vn.generate_sql(q.question)
+        response = requests.post(
+            "https://ask.vanna.ai/rpc",
+            headers={
+                "Content-Type": "application/json",
+                "Vanna-Key": VANNA_API_KEY,
+                "Vanna-Org": VANNA_MODEL
+            },
+            json={
+                "method": "generate_sql",
+                "params": [{"question": q.question}]
+            }
+        )
+        result = response.json()
         return {
             "question": q.question,
-            "sql": sql,
+            "sql": result.get("result", {}).get("text", ""),
             "status": "ok"
         }
     except Exception as e:
-        return {
-            "error": str(e),
-            "status": "error"
-        }
+        return {"error": str(e), "status": "error"}
