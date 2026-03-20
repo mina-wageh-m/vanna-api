@@ -1,12 +1,13 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 import requests
+import json
 import pymysql
 
 app = FastAPI()
 
 VANNA_API_KEY = "vn-071c62b7ef4e4fe38fa7ae09a631dbee"
-VANNA_MODEL = "virtu"
+VANNA_URL = "https://ask.vanna.ai/api/v0/chat_sse"
 
 DB_CONFIG = {
     "host": "127.0.0.1",
@@ -15,25 +16,6 @@ DB_CONFIG = {
     "user": "_7fedefe90efce3c3",
     "password": "tKPL3OWNsk0fmpNp"
 }
-
-DDL = """
-CREATE TABLE `tabStudent` (
-  `name` varchar(140) NOT NULL,
-  `first_name` varchar(140) DEFAULT NULL,
-  `middle_name` varchar(140) DEFAULT NULL,
-  `last_name` varchar(140) DEFAULT NULL,
-  `student_name` varchar(140) DEFAULT NULL,
-  `joining_date` date DEFAULT NULL,
-  `date_of_birth` date DEFAULT NULL,
-  `date_of_leaving` date DEFAULT NULL,
-  `gender` varchar(140) DEFAULT NULL,
-  `nationality` varchar(140) DEFAULT NULL,
-  `student_email_id` varchar(140) DEFAULT NULL,
-  `student_mobile_number` varchar(140) DEFAULT NULL,
-  `enabled` int(1) NOT NULL DEFAULT 1,
-  PRIMARY KEY (`name`)
-)
-"""
 
 class Question(BaseModel):
     question: str
@@ -53,33 +35,43 @@ def run_sql(sql: str):
     conn.close()
     return [dict(zip(columns, row)) for row in rows]
 
-def vanna_request(method: str, params: list):
+def ask_vanna(question: str):
+    headers = {
+        "Content-Type": "application/json",
+        "VANNA-API-KEY": VANNA_API_KEY
+    }
+    data = {
+        "message": question,
+        "user_email": "mina.wageh.it@gmail.com",
+        "acceptable_responses": ["sql", "text"]
+    }
     response = requests.post(
-        "https://ask.vanna.ai/rpc",
-        headers={
-            "Content-Type": "application/json",
-            "Vanna-Key": VANNA_API_KEY,
-            "Vanna-Org": VANNA_MODEL,
-            "Vanna-Email": "mina.wageh.it@gmail.com"
-        },
-        json={"method": method, "params": params}
+        VANNA_URL,
+        headers=headers,
+        data=json.dumps(data),
+        stream=True
     )
-    return response.json()
+    sql = None
+    for line in response.iter_lines():
+        if line:
+            decoded = line.decode('utf-8')
+            if decoded.startswith("data:"):
+                try:
+                    event = json.loads(decoded[5:].strip())
+                    if event.get('type') == 'sql':
+                        sql = event.get('query', '')
+                except:
+                    pass
+    return sql
 
 @app.get("/")
 def root():
     return {"status": "Vanna API is running!"}
 
-@app.get("/train")
-def train():
-    result = vanna_request("train", [{"ddl": DDL}])
-    return {"status": "trained", "result": result}
-
 @app.post("/ask")
 def ask(q: Question):
     try:
-        result = vanna_request("generate_sql", [{"question": q.question}])
-        sql = result.get("result", {}).get("text", "")
+        sql = ask_vanna(q.question)
         if not sql:
             return {"error": "No SQL generated", "status": "error"}
         data = run_sql(sql)
