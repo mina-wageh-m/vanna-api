@@ -9,16 +9,16 @@ app = FastAPI()
 VANNA_API_KEY = "vn-071c62b7ef4e4fe38fa7ae09a631dbee"
 VANNA_URL = "https://ask.vanna.ai/api/v0/chat_sse"
 
-DB_CONFIG = {
-    "host": "127.0.0.1",
+DB_CONFIG =
+{
+    "host": "209.182.233.202",
     "port": 3306,
-    "database": "_7fedefe90efce3c3",
-    "user": "_7fedefe90efce3c3",
-    "password": "tKPL3OWNsk0fmpNp"
+    "database": "_813e23c8a5386024",
+    "user": "_813e23c8a5386024",
+    "password": "OTwspCMETxR442xV"
 }
 
-class Question(BaseModel):
-    question: str
+class Question(BaseModel):question: str
 
 def run_sql(sql: str):
     conn = pymysql.connect(
