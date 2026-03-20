@@ -1,0 +1,27 @@
+# IDEs and Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Python distribution / build
+dist/
+build/
+*.egg-info/
+
+# Python virtual environment
+venv/
+.venv/
+env/
+
+# Environment variables (Sensitive Data)
+.env
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Logs and databases
+*.log
+*.sqlite3
