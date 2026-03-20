@@ -1,24 +1,23 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 import requests
-import json
 import pymysql
 
 app = FastAPI()
 
 VANNA_API_KEY = "vn-071c62b7ef4e4fe38fa7ae09a631dbee"
-VANNA_URL = "https://ask.vanna.ai/api/v0/chat_sse"
+VANNA_MODEL = "virtu"
 
-DB_CONFIG =
-{
+DB_CONFIG = {
     "host": "209.182.233.202",
     "port": 3306,
     "database": "_813e23c8a5386024",
-    "user": "_813e23c8a5386024",
+    "user": "_813e23c8a5386024@localhost",
     "password": "OTwspCMETxR442xV"
 }
 
-class Question(BaseModel):question: str
+class Question(BaseModel):
+    question: str
 
 def run_sql(sql: str):
     conn = pymysql.connect(
@@ -35,35 +34,6 @@ def run_sql(sql: str):
     conn.close()
     return [dict(zip(columns, row)) for row in rows]
 
-def ask_vanna(question: str):
-    headers = {
-        "Content-Type": "application/json",
-        "VANNA-API-KEY": VANNA_API_KEY
-    }
-    data = {
-        "message": question,
-        "user_email": "mina.wageh.it@gmail.com",
-        "acceptable_responses": ["sql", "text"]
-    }
-    response = requests.post(
-        VANNA_URL,
-        headers=headers,
-        data=json.dumps(data),
-        stream=True
-    )
-    sql = None
-    for line in response.iter_lines():
-        if line:
-            decoded = line.decode('utf-8')
-            if decoded.startswith("data:"):
-                try:
-                    event = json.loads(decoded[5:].strip())
-                    if event.get('type') == 'sql':
-                        sql = event.get('query', '')
-                except:
-                    pass
-    return sql
-
 @app.get("/")
 def root():
     return {"status": "Vanna API is running!"}
@@ -71,9 +41,24 @@ def root():
 @app.post("/ask")
 def ask(q: Question):
     try:
-        sql = ask_vanna(q.question)
+        response = requests.post(
+            "https://ask.vanna.ai/rpc",
+            headers={
+                "Content-Type": "application/json",
+                "Vanna-Key": VANNA_API_KEY,
+                "Vanna-Org": VANNA_MODEL
+            },
+            json={
+                "method": "generate_sql",
+                "params": [{"question": q.question}]
+            }
+        )
+        result = response.json()
+        sql = result.get("result", {}).get("text", "")
+
         if not sql:
             return {"error": "No SQL generated", "status": "error"}
+
         data = run_sql(sql)
         return {
             "question": q.question,
