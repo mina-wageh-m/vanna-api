@@ -9,11 +9,11 @@ VANNA_API_KEY = "vn-071c62b7ef4e4fe38fa7ae09a631dbee"
 VANNA_MODEL = "virtu"
 
 DB_CONFIG = {
-    "host": "209.182.233.202",
+    "host": "127.0.0.1",
     "port": 3306,
-    "database": "_813e23c8a5386024",
-    "user": "_813e23c8a5386024@localhost",
-    "password": "OTwspCMETxR442xV"
+    "database": "_7fedefe90efce3c3",
+    "user": "_7fedefe90efce3c3",
+    "password": "tKPL3OWNsk0fmpNp"
 }
 
 class Question(BaseModel):
