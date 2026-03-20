@@ -59,7 +59,8 @@ def vanna_request(method: str, params: list):
         headers={
             "Content-Type": "application/json",
             "Vanna-Key": VANNA_API_KEY,
-            "Vanna-Org": VANNA_MODEL
+            "Vanna-Org": VANNA_MODEL,
+            "Vanna-Email": "mina.wageh.it@gmail.com"
         },
         json={"method": method, "params": params}
     )
