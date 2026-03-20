@@ -16,6 +16,25 @@ DB_CONFIG = {
     "password": "tKPL3OWNsk0fmpNp"
 }
 
+DDL = """
+CREATE TABLE `tabStudent` (
+  `name` varchar(140) NOT NULL,
+  `first_name` varchar(140) DEFAULT NULL,
+  `middle_name` varchar(140) DEFAULT NULL,
+  `last_name` varchar(140) DEFAULT NULL,
+  `student_name` varchar(140) DEFAULT NULL,
+  `joining_date` date DEFAULT NULL,
+  `date_of_birth` date DEFAULT NULL,
+  `date_of_leaving` date DEFAULT NULL,
+  `gender` varchar(140) DEFAULT NULL,
+  `nationality` varchar(140) DEFAULT NULL,
+  `student_email_id` varchar(140) DEFAULT NULL,
+  `student_mobile_number` varchar(140) DEFAULT NULL,
+  `enabled` int(1) NOT NULL DEFAULT 1,
+  PRIMARY KEY (`name`)
+)
+"""
+
 class Question(BaseModel):
     question: str
 
@@ -34,31 +53,34 @@ def run_sql(sql: str):
     conn.close()
     return [dict(zip(columns, row)) for row in rows]
 
+def vanna_request(method: str, params: list):
+    response = requests.post(
+        "https://ask.vanna.ai/rpc",
+        headers={
+            "Content-Type": "application/json",
+            "Vanna-Key": VANNA_API_KEY,
+            "Vanna-Org": VANNA_MODEL
+        },
+        json={"method": method, "params": params}
+    )
+    return response.json()
+
 @app.get("/")
 def root():
     return {"status": "Vanna API is running!"}
 
+@app.get("/train")
+def train():
+    result = vanna_request("train", [{"ddl": DDL}])
+    return {"status": "trained", "result": result}
+
 @app.post("/ask")
 def ask(q: Question):
     try:
-        response = requests.post(
-            "https://ask.vanna.ai/rpc",
-            headers={
-                "Content-Type": "application/json",
-                "Vanna-Key": VANNA_API_KEY,
-                "Vanna-Org": VANNA_MODEL
-            },
-            json={
-                "method": "generate_sql",
-                "params": [{"question": q.question}]
-            }
-        )
-        result = response.json()
+        result = vanna_request("generate_sql", [{"question": q.question}])
         sql = result.get("result", {}).get("text", "")
-        
         if not sql:
             return {"error": "No SQL generated", "status": "error"}
-        
         data = run_sql(sql)
         return {
             "question": q.question,
