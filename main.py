@@ -12,7 +12,7 @@ DB_CONFIG = {
     "host": "209.182.233.202",
     "port": 3306,
     "database": "_813e23c8a5386024",
-    "user": "_813e23c8a5386024@localhost",
+    "user": "_813e23c8a5386024",
     "password": "OTwspCMETxR442xV"
 }
 
