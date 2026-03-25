@@ -57,10 +57,12 @@ def ask(q: Question):
             stream=True
         )
         
+        lines = []
         sql = None
         for line in response.iter_lines():
             if line:
                 decoded = line.decode('utf-8')
+                lines.append(decoded)
                 if decoded.startswith("data:"):
                     try:
                         import json
@@ -71,7 +73,7 @@ def ask(q: Question):
                         pass
         
         if not sql:
-            return {"error": "No SQL generated", "status": "error"}
+            return {"error": "No SQL generated", "raw_response": lines, "status": "error"}
         
         data = run_sql(sql)
         return {
