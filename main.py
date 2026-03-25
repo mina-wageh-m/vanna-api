@@ -1,79 +1,71 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-import requests
 import pymysql
+import anthropic
+import os
 
 app = FastAPI()
 
-VANNA_API_KEY = "vn-071c62b7ef4e4fe38fa7ae09a631dbee"
-VANNA_MODEL = "virtu"
+client = anthropic.Anthropic(api_key=os.environ.get('ANTHROPIC_API_KEY'))
 
 DB_CONFIG = {
     "host": "209.182.233.202",
     "port": 3306,
     "database": "_813e23c8a5386024",
     "user": "_813e23c8a5386024_remote",
-    "password": "OTwspCMETxR442xV"
+    "password": "OTwspCMETxR442xV",
+    "ssl_disabled": True
 }
+
+DDL = """
+CREATE TABLE `tabStudent` (
+  `name` varchar(140) NOT NULL,
+  `first_name` varchar(140) DEFAULT NULL,
+  `last_name` varchar(140) DEFAULT NULL,
+  `student_name` varchar(140) DEFAULT NULL,
+  `enabled` int(1) NOT NULL DEFAULT 1,
+  `cb_student_status` varchar(140) DEFAULT 'Active',
+  `current_class` varchar(140) DEFAULT NULL,
+  `current_program` varchar(140) DEFAULT NULL,
+  `admission_date` date DEFAULT NULL,
+  `date_of_leaving` date DEFAULT NULL,
+  PRIMARY KEY (`name`)
+)
+"""
 
 class Question(BaseModel):
     question: str
 
 def run_sql(sql: str):
-    conn = pymysql.connect(
-        host=DB_CONFIG["host"],
-        port=DB_CONFIG["port"],
-        database=DB_CONFIG["database"],
-        user=DB_CONFIG["user"],
-        password=DB_CONFIG["password"],
-        ssl_disabled=True
-    )
+    conn = pymysql.connect(**DB_CONFIG)
     cursor = conn.cursor()
     cursor.execute(sql)
     rows = cursor.fetchall()
     columns = [desc[0] for desc in cursor.description]
     conn.close()
     return [dict(zip(columns, row)) for row in rows]
-    
 
 @app.get("/")
 def root():
-    return {"status": "Vanna API is running!"}
+    return {"status": "API is running!"}
 
 @app.post("/ask")
 def ask(q: Question):
     try:
-        import json
-        files = {
-            'message': (None, q.question),
-            'user_email': (None, 'mina.wageh.it@gmail.com'),
-            'acceptable_responses': (None, '["sql"]')
-        }
-        response = requests.post(
-            "https://ask.vanna.ai/api/v0/chat_sse",
-            headers={
-                "VANNA-API-KEY": VANNA_API_KEY
-            },
-            files=files,
-            stream=True
+        message = client.messages.create(
+            model="claude-3-5-sonnet-20241022",
+            max_tokens=1024,
+            messages=[{
+                "role": "user",
+                "content": f"""Given this database table:
+{DDL}
+
+Generate ONLY a SQL query to answer: {q.question}
+Return ONLY the SQL query, nothing else."""
+            }]
         )
-        
-        lines = []
-        sql = None
-        for line in response.iter_lines():
-            if line:
-                decoded = line.decode('utf-8')
-                lines.append(decoded)
-                if decoded.startswith("data:"):
-                    try:
-                        event = json.loads(decoded[5:].strip())
-                        if event.get('type') == 'sql':
-                            sql = event.get('query', '')
-                    except:
-                        pass
-        
-        if not sql:
-            return {"error": "No SQL generated", "raw_response": lines, "status": "error"}
+        sql = message.content[0].text.strip()
+        sql = sql.replace("```sql", "").replace("```", "").strip()
         
         data = run_sql(sql)
         return {
