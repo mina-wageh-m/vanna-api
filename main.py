@@ -46,17 +46,17 @@ def ask(q: Question):
         response = requests.post(
             "https://ask.vanna.ai/api/v0/chat_sse",
             headers={
-                "Content-Type": "application/json",
                 "VANNA-API-KEY": VANNA_API_KEY
             },
-            json={
+            data={
                 "message": q.question,
                 "user_email": "mina.wageh.it@gmail.com",
-                "acceptable_responses": ["sql"]
+                "acceptable_responses": '["sql"]'
             },
             stream=True
         )
         
+        import json
         lines = []
         sql = None
         for line in response.iter_lines():
@@ -65,7 +65,6 @@ def ask(q: Question):
                 lines.append(decoded)
                 if decoded.startswith("data:"):
                     try:
-                        import json
                         event = json.loads(decoded[5:].strip())
                         if event.get('type') == 'sql':
                             sql = event.get('query', '')
