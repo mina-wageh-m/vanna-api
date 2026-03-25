@@ -25,7 +25,8 @@ def run_sql(sql: str):
         port=DB_CONFIG["port"],
         database=DB_CONFIG["database"],
         user=DB_CONFIG["user"],
-        password=DB_CONFIG["password"]
+        password=DB_CONFIG["password"],
+        ssl_disabled=True
     )
     cursor = conn.cursor()
     cursor.execute(sql)
@@ -33,6 +34,7 @@ def run_sql(sql: str):
     columns = [desc[0] for desc in cursor.description]
     conn.close()
     return [dict(zip(columns, row)) for row in rows]
+    
 
 @app.get("/")
 def root():
