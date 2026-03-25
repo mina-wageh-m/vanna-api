@@ -44,23 +44,35 @@ def root():
 def ask(q: Question):
     try:
         response = requests.post(
-            "https://ask.vanna.ai/rpc",
+            "https://ask.vanna.ai/api/v0/chat_sse",
             headers={
                 "Content-Type": "application/json",
-                "Vanna-Key": VANNA_API_KEY,
-                "Vanna-Org": VANNA_MODEL
+                "VANNA-API-KEY": VANNA_API_KEY
             },
             json={
-                "method": "generate_sql",
-                "params": [{"question": q.question}]
-            }
+                "message": q.question,
+                "user_email": "mina.wageh.it@gmail.com",
+                "acceptable_responses": ["sql"]
+            },
+            stream=True
         )
-        result = response.json()
-        sql = result.get("result", {}).get("text", "")
-
+        
+        sql = None
+        for line in response.iter_lines():
+            if line:
+                decoded = line.decode('utf-8')
+                if decoded.startswith("data:"):
+                    try:
+                        import json
+                        event = json.loads(decoded[5:].strip())
+                        if event.get('type') == 'sql':
+                            sql = event.get('query', '')
+                    except:
+                        pass
+        
         if not sql:
             return {"error": "No SQL generated", "status": "error"}
-
+        
         data = run_sql(sql)
         return {
             "question": q.question,
