@@ -43,20 +43,21 @@ def root():
 @app.post("/ask")
 def ask(q: Question):
     try:
+        import json
+        files = {
+            'message': (None, q.question),
+            'user_email': (None, 'mina.wageh.it@gmail.com'),
+            'acceptable_responses': (None, '["sql"]')
+        }
         response = requests.post(
             "https://ask.vanna.ai/api/v0/chat_sse",
             headers={
                 "VANNA-API-KEY": VANNA_API_KEY
             },
-            data={
-                "message": q.question,
-                "user_email": "mina.wageh.it@gmail.com",
-                "acceptable_responses": '["sql"]'
-            },
+            files=files,
             stream=True
         )
         
-        import json
         lines = []
         sql = None
         for line in response.iter_lines():
