@@ -21,22 +21,29 @@ def get_all_ddl():
     try:
         conn = pymysql.connect(**DB_CONFIG)
         cursor = conn.cursor()
-        cursor.execute("SHOW TABLES")
-        tables = [row[0] for row in cursor.fetchall()]
 
-        important_tables = [t for t in tables if t.startswith('tab') and any(
-            keyword in t.lower() for keyword in [
-                'student', 'fee', 'course', 'attendance',
-                'instructor', 'program', 'guardian', 'group'
-            ]
-        )]
+        important_tables = [
+            'tabStudent',
+            'tabStudent Attendance',
+            'tabFees',
+            'tabCourse',
+            'tabInstructor',
+            'tabStudent Group',
+            'tabProgram',
+            'tabAcademic Year',
+            'tabAcademic Term',
+            'tabStudent Group Student',
+        ]
 
         all_ddl = ""
         for table in important_tables:
-            cursor.execute(f"SHOW CREATE TABLE `{table}`")
-            row = cursor.fetchone()
-            if row:
-                all_ddl += row[1] + ";\n\n"
+            try:
+                cursor.execute(f"SHOW CREATE TABLE `{table}`")
+                row = cursor.fetchone()
+                if row:
+                    all_ddl += row[1] + ";\n\n"
+            except:
+                pass
         conn.close()
         return all_ddl
     except Exception as e:
