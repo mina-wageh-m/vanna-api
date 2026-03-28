@@ -22,17 +22,43 @@ def get_all_ddl():
         conn = pymysql.connect(**DB_CONFIG)
         cursor = conn.cursor()
 
-        important_tables = [
+        important_tables =
+        [
             'tabStudent',
             'tabStudent Attendance',
-            'tabFees',
-            'tabCourse',
-            'tabInstructor',
             'tabStudent Group',
+            'tabStudent Group Student',
+            'tabStudent Guardian',
+            'tabStudent Category',
+            'tabStudent Leave Application',
+            'tabStudent Log',
+
+            'tabFees',
+            'tabFee Structure',
+            'tabFee Schedule',
+            'tabFee Category',
+            'tabFee Component',
+            'tabFee Invoice',
+
+            'tabCourse',
+            'tabCourse Enrollment',
+            'tabCourse Schedule',
             'tabProgram',
+            'tabProgram Enrollment',
             'tabAcademic Year',
             'tabAcademic Term',
-            'tabStudent Group Student',
+
+            'tabInstructor',
+            'tabStudent Group Instructor',
+
+            'tabAssessment Plan',
+            'tabAssessment Result',
+            'tabGrading Scale',
+
+            'tabTimetable Periods',
+            'tabRoom',
+            'tabSection',
+            'tabClass',
         ]
 
         all_ddl = ""
