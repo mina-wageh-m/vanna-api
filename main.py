@@ -80,3 +80,7 @@ Return ONLY the SQL query, nothing else."""
         }
     except Exception as e:
         return {"error": str(e), "status": "error"}
+
+@app.get("/tables")
+def tables():
+    return {"tables_count": len(DDL.split("CREATE TABLE")), "ddl_length": len(DDL)}
