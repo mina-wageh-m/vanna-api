@@ -23,8 +23,16 @@ def get_all_ddl():
         cursor = conn.cursor()
         cursor.execute("SHOW TABLES")
         tables = [row[0] for row in cursor.fetchall()]
+
+        important_tables = [t for t in tables if t.startswith('tab') and any(
+            keyword in t.lower() for keyword in [
+                'student', 'fee', 'course', 'attendance',
+                'instructor', 'program', 'guardian', 'group'
+            ]
+        )]
+
         all_ddl = ""
-        for table in tables:
+        for table in important_tables:
             cursor.execute(f"SHOW CREATE TABLE `{table}`")
             row = cursor.fetchone()
             if row:
