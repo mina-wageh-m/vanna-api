@@ -53,6 +53,13 @@ def get_all_ddl():
             'tabRoom',
             'tabSection',
             'tabClass',
+            'tabFee Invoice Batch',
+            'tabFee Invoice Generator',
+            'tabFee Invoice Batch Generated',
+            'tabFee Invoice Generator Generated',
+            'tabCB Cheque Bounce',
+            'tabCB Student Wallet',
+            'tabCB Wallet Transaction',
         ]
 
         all_ddl = ""
