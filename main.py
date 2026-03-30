@@ -60,6 +60,8 @@ def get_all_ddl():
             'tabCB Cheque Bounce',
             'tabCB Student Wallet',
             'tabCB Wallet Transaction',
+            'tabSales Invoice',
+            'tabFee Invoice Batch Generated',
         ]
 
         all_ddl = ""
