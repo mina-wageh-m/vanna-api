@@ -129,6 +129,8 @@ def get_all_ddl():
             'tabDesignation',
         ]
 
+        important_tables = list(dict.fromkeys(important_tables))
+
         all_ddl = ""
         for table in important_tables:
             try:
