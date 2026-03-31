@@ -117,7 +117,7 @@ Return ONLY a comma-separated list of the table names, nothing else.
 Example: tabStudent,tabStudent Group"""
 
         tables_response = client.messages.create(
-            model="claude-3-5-sonnet-20241022", # موديل ممتاز جداً في الـ SQL
+            model="claude-3-5-sonnet-latest", # موديل ممتاز جداً في الـ SQL
             max_tokens=200,
             messages=[{"role": "user", "content": tables_prompt}]
         )
