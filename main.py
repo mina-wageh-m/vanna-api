@@ -6,7 +6,6 @@ import os
 
 app = FastAPI()
 
-# تأكد من تعيين المتغير البيئي ANTHROPIC_API_KEY في نظام التشغيل لديك
 client = anthropic.Anthropic(api_key=os.environ.get('ANTHROPIC_API_KEY'))
 
 DB_CONFIG = {
@@ -18,36 +17,96 @@ DB_CONFIG = {
     "ssl_disabled": True
 }
 
-# دالة ذكية لتحديد الجداول المطلوبة فقط بناءً على سؤال المستخدم
 def get_relevant_tables(question: str):
     question_lower = question.lower()
     tables_to_fetch = set()
 
-    # كلمات دلالية لربط الأسئلة بالجداول المناسبة في ERPNext
+    # توزيع الـ 65 جدولاً بالكامل بدون حذف أي جدول
     keywords_mapping = {
-        "fee": ['tabStudent', 'tabFees', 'tabFee Invoice', 'tabFee Structure', 'tabFee Category', 'tabFee Component'],
-        "invoice": ['tabStudent', 'tabFee Invoice', 'tabSales Invoice'],
-        "attend": ['tabStudent', 'tabStudent Attendance', 'tabAttendance'],
-        "group": ['tabStudent', 'tabStudent Group', 'tabStudent Group Student', 'tabStudent Group Instructor'],
-        "course": ['tabStudent', 'tabCourse', 'tabCourse Enrollment', 'tabProgram'],
-        "class": ['tabStudent', 'tabClass', 'tabSection', 'tabStudent Group'],
-        "guardian": ['tabStudent', 'tabStudent Guardian'],
-        "employee": ['tabEmployee', 'tabDepartment', 'tabDesignation'],
-        "leave": ['tabStudent', 'tabStudent Leave Application', 'tabLeave Application']
+        "fee": [
+            'tabStudent', 'tabFees', 'tabFee Structure', 'tabFee Schedule',
+            'tabFee Category', 'tabFee Component', 'tabFee Invoice',
+            'tabFee Invoice Batch', 'tabFee Invoice Generator',
+            'tabFee Invoice Batch Generated', 'tabFee Invoice Generator Generated',
+            'tabFee Group', 'tabFee Head', 'tabFee Template'
+        ],
+        "invoice": [
+            'tabStudent', 'tabFee Invoice', 'tabSales Invoice',
+            'tabFee Invoice Batch', 'tabFee Invoice Generator'
+        ],
+        "wallet": [
+            'tabStudent', 'tabCB Student Wallet',
+            'tabCB Wallet Transaction', 'tabCB Cheque Bounce'
+        ],
+        "concession": [
+            'tabCB Concession Type', 'tabCB Fee Payment Allocation',
+            'tabCB Fee Refund Allocation'
+        ],
+        "attend": [
+            'tabStudent', 'tabStudent Attendance',
+            'tabAttendance', 'tabHoliday List', 'tabHoliday'
+        ],
+        "group": [
+            'tabStudent', 'tabStudent Group', 'tabStudent Group Student',
+            'tabStudent Group Instructor'
+        ],
+        "course": [
+            'tabStudent', 'tabCourse', 'tabCourse Enrollment',
+            'tabCourse Schedule', 'tabProgram', 'tabProgram Enrollment',
+            'tabStudy Material'
+        ],
+        "assessment": [
+            'tabStudent', 'tabAssessment Plan',
+            'tabAssessment Result', 'tabGrading Scale'
+        ],
+        "class": [
+            'tabStudent', 'tabClass', 'tabSection', 'tabRoom',
+            'tabTimetable Periods', 'tabStudent Class Enrollment'
+        ],
+        "guardian": [
+            'tabStudent', 'tabStudent Guardian', 'tabStudent Siblings'
+        ],
+        "employee": [
+            'tabEmployee', 'tabDepartment', 'tabDesignation', 'tabInstructor'
+        ],
+        "leave": [
+            'tabStudent', 'tabStudent Leave Application',
+            'tabLeave Application', 'tabLeave Type'
+        ],
+        "admission": [
+            'tabStudent Admission', 'tabStudent Applicant'
+        ],
+        "transport": [
+            'tabStudent', 'tabStudent Transportation'
+        ],
+        "school": [
+            'tabSchool Branch', 'tabSchool House',
+            'tabAcademic Year', 'tabAcademic Term'
+        ],
+        # جداول إضافية لم يتم ذكرها بكلمات دلالية مباشرة، يتم تفعيلها بأسماء عامة
+        "student": [
+            'tabStudent', 'tabStudent Category', 'tabStudent Log',
+            'tabStudent Certificate', 'tabStudent Gate Pass',
+            'tabStudent Language', 'tabStudent Batch Name',
+            'tabStudent LWI Log'
+        ]
     }
 
-    # البحث عن الكلمات الدلالية في السؤال
+    # جلب الجداول بناءً على الكلمات المفتاحية
     for key, tables in keywords_mapping.items():
         if key in question_lower:
             tables_to_fetch.update(tables)
 
-    # إذا لم يجد أي كلمة دلالية أو كان السؤال عاماً، نمرر الجداول الأساسية
+    # إذا لم يجد أي كلمة مفتاحية، نمرر الجداول الأساسية (مثل الطلاب والرسوم والمجموعات)
     if not tables_to_fetch:
-        tables_to_fetch = {'tabStudent', 'tabStudent Group', 'tabFee Invoice'}
+        tables_to_fetch.update([
+            'tabStudent', 'tabStudent Group', 'tabFee Invoice',
+            'tabFees', 'tabClass', 'tabAcademic Year'
+        ])
 
     return list(tables_to_fetch)
 
-# دالة لجلب الـ DDL للجداول المحددة فقط لتوفير الـ Tokens
+
 def get_ddl_for_tables(tables_list):
     all_ddl = ""
     try:
@@ -61,7 +120,6 @@ def get_ddl_for_tables(tables_list):
                 if row:
                     all_ddl += row[1] + ";\n\n"
             except:
-                # في حال لم يكن الجدول موجوداً أو حدث خطأ نتخطاه
                 pass
 
         conn.close()
@@ -70,8 +128,10 @@ def get_ddl_for_tables(tables_list):
         print(f"Database Connection Error: {e}")
         return ""
 
+
 class Question(BaseModel):
     question: str
+
 
 def run_sql(sql: str):
     conn = pymysql.connect(**DB_CONFIG)
@@ -82,20 +142,18 @@ def run_sql(sql: str):
     conn.close()
     return [dict(zip(columns, row)) for row in rows]
 
+
 @app.get("/")
 def root():
     return {"status": "API is running!"}
 
+
 @app.post("/ask")
 def ask(q: Question):
     try:
-        # 1. تحديد الجداول المهمة فقط للسؤال الحالي
         relevant_tables = get_relevant_tables(q.question)
-
-        # 2. جلب الـ DDL للجداول المحددة فقط
         DDL = get_ddl_for_tables(relevant_tables)
 
-        # 3. تدريب كلود على طريقة تفكير ERPNext / Frappe
         system_training = f"""You are an expert in ERPNext (Frappe framework) databases.
 Generate ONLY a MariaDB SQL query to answer the user's question.
 
@@ -115,7 +173,7 @@ Given these database tables:
 Generate ONLY the SQL query, nothing else. No markdown, no explanation. Just the query."""
 
         message = client.messages.create(
-            model="claude-sonnet-4-5", # تأكد من أن حسابك يدعم هذا الموديل أو استبدله بـ claude-3-5-sonnet-20241022
+            model="claude-sonnet-4-5",
             max_tokens=1024,
             messages=[{
                 "role": "user",
@@ -132,12 +190,11 @@ Generate ONLY the SQL query, nothing else. No markdown, no explanation. Just the
             "sql": sql,
             "data": data,
             "status": "ok",
-            "tables_used": relevant_tables # أضفت هذا لتعرف ما هي الجداول التي استعان بها في الـ Prompt
+            "tables_used": relevant_tables
         }
     except Exception as e:
         return {"error": str(e), "status": "error"}
 
 @app.get("/tables")
 def tables():
-    # هذا المسار سيعطيك فكرة عن عدد الجداول الأساسية الكلي في المصفوفة لديك للتشيك فقط
     return {"message": "Use the /ask endpoint to dynamically load tables based on your query."}
