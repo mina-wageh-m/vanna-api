@@ -24,7 +24,7 @@ def get_relevant_tables(question: str):
     # توزيع الـ 65 جدولاً بالكامل بدون حذف أي جدول
     keywords_mapping = {
         "fee": [
-            'tabStudent', 'tabFees', 'tabFee Structure', 'tabFee Schedule',
+            'tabStudent', 'tabFees', 'tabFee Structure', 'tabFee Schedule', 'tabSales Invoice'
             'tabFee Category', 'tabFee Component', 'tabFee Invoice',
             'tabFee Invoice Batch', 'tabFee Invoice Generator',
             'tabFee Invoice Batch Generated', 'tabFee Invoice Generator Generated',
