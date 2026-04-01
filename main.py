@@ -95,20 +95,10 @@ TABLE_GROUPS = {
         'tabCB Wallet Payment Allocation',
         'tabGL Entry',
         'tabAccount',
-        'tabJournal Entry Account',
-        'tabJournal Entry',
         'tabSalary Component',
-        'tabCurrency',
-        'tabCurrency Exchange Settings Result',
-        'tabCurrency Exchange Settings Details',
-        'tabPegged Currency Details',
         'tabCost Center',
         'tabPrice List',
         'tabItem Price',
-        'tabPurchase Receipt',
-        'tabExpense Claim Type',
-        'ledger_health_id_seq',
-        'tabProcess Deferred Accounting',
         'tabFee Group',
         'tabStudent',
     ],
@@ -208,7 +198,7 @@ def get_ddl_for_tables(tables: list) -> str:
 
 def detect_category(question: str) -> str:
     q = question.lower()
-    if any(w in q for w in ["fee", "payment", "invoice", "overdue", "paid", "outstanding", "bounce", "wallet", "concession", "refund"]):
+    if any(w in q for w in ["fee", "payment", "invoice", "overdue", "paid", "outstanding", "bounce", "wallet", "concession", "refund", "financial"]):
         return "fees"
     if any(w in q for w in ["absent", "attendance", "present", "leave", "holiday"]):
         return "attendance"
