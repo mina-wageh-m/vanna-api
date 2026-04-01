@@ -187,6 +187,9 @@ IMPORTANT RULES:
 - Relationships use Link fields, NOT foreign keys.
 - Always use backticks around table names with spaces.
 - Use LIKE '%value%' when searching for names or codes.
+- For ERPNext invoices (tabSales Invoice), always filter by `docstatus = 1` to exclude draft or cancelled invoices.
+- To check outstanding or overdue invoices, use the field `outstanding_amount > 0`.
+- Always check if there's an `academic_year` field and filter by the current year if the user implies the current status.
 
 Given these database tables DDL:
 {ddl}
