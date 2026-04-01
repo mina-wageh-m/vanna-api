@@ -3,6 +3,7 @@ from pydantic import BaseModel
 import pymysql
 import anthropic
 import os
+import json # هنحتاجه عشان نضمن إن الموديل يرجع لنا قائمة الأسماء مظبوطة
 
 app = FastAPI()
 
@@ -17,164 +18,68 @@ DB_CONFIG = {
     "ssl_disabled": True
 }
 
+# (نفس مصفوفات TABLE_GROUPS بتاعتك بدون تغيير)
 TABLE_GROUPS = {
     "students": [
-        'tabStudent',
-        'tabStudent Guardian',
-        'tabStudent Category',
-        'tabStudent Log',
-        'tabStudent Class Enrollment',
-        'tabStudent Siblings',
-        'tabStudent Applicant',
-        'tabStudent Admission',
-        'tabStudent Language',
-        'tabStudent Batch Name',
-        'tabStudent LWI Log',
-        'tabStudent Certificate',
-        'tabStudent Gate Pass',
-        'tabStudent Transportation',
-        'tabAdmission Registration',
-        'tabAdmission Enquiry',
-        'tabGuardian',
-        'tabGuardian Student',
-        'tabStudy Stream',
+        'tabStudent', 'tabStudent Guardian', 'tabStudent Category', 'tabStudent Log',
+        'tabStudent Class Enrollment', 'tabStudent Siblings', 'tabStudent Applicant',
+        'tabStudent Admission', 'tabStudent Language', 'tabStudent Batch Name',
+        'tabStudent LWI Log', 'tabStudent Certificate', 'tabStudent Gate Pass',
+        'tabStudent Transportation', 'tabAdmission Registration', 'tabAdmission Enquiry',
+        'tabGuardian', 'tabGuardian Student', 'tabStudy Stream',
     ],
     "attendance": [
-        'tabStudent Attendance',
-        'tabAttendance',
-        'tabAttendance Request',
-        'tabStudent Leave Application',
-        'tabLeave Application',
-        'tabLeave Type',
-        'tabHoliday',
-        'tabHoliday List',
-        'tabStudent',
-        'tabStudent Group',
+        'tabStudent Attendance', 'tabAttendance', 'tabAttendance Request',
+        'tabStudent Leave Application', 'tabLeave Application', 'tabLeave Type',
+        'tabHoliday', 'tabHoliday List', 'tabStudent', 'tabStudent Group',
     ],
     "fees": [
-        'tabSales Invoice Item',
-        'tabSales Invoice',
-        'tabCB Invoice Fine',
-        'tabFee Invoice Batch Student',
-        'tabFee Invoice Batch Generated',
-        'tabFee Invoice Generator Student',
-        'tabFee Invoice Generator Generated',
-        'tabStudent Group Transfer Invoice',
-        'tabFee Invoice Batch Component',
-        'tabFee Invoice Batch Section',
-        'tabFee Invoice Batch Group',
-        'tabFee Invoice Batch Class',
-        'tabFee Invoice Batch',
-        'tabInvoice Title',
-        'tabFee Invoice Generator Component',
-        'tabFee Invoice Generator Section',
-        'tabFee Invoice Generator',
-        'tabInvoice Adjustment',
-        'tabFee Invoice Batch Category',
-        'tabFee Invoice Generator Class',
-        'tabFee Invoice Generator Group',
-        'tabCB Fee Payment Allocation',
-        'tabFee Template Component',
-        'tabFee Template Section',
-        'tabFee Template',
-        'tabFee Template Group',
-        'tabFee Head',
-        'tabFee Category',
-        'tabFee Template Class',
-        'tabTransport Fee Allocation',
-        'tabFee Component',
-        'tabFee Schedule',
-        'tabFee Structure',
-        'tabPayment Schedule',
-        'tabPayment Ledger Entry',
-        'tabPayment Entry Reference',
-        'tabPayment Entry',
-        'tabMode of Payment',
-        'tabCB Student Wallet',
-        'tabCB Wallet Transaction',
-        'tabCB Wallet Payment Allocation',
-        'tabGL Entry',
-        'tabAccount',
-        'tabSalary Component',
-        'tabCost Center',
-        'tabPrice List',
-        'tabItem Price',
-        'tabFee Group',
-        'tabStudent',
+        'tabSales Invoice Item', 'tabSales Invoice', 'tabCB Invoice Fine',
+        'tabFee Invoice Batch Student', 'tabFee Invoice Batch Generated',
+        'tabFee Invoice Generator Student', 'tabFee Invoice Generator Generated',
+        'tabStudent Group Transfer Invoice', 'tabFee Invoice Batch Component',
+        'tabFee Invoice Batch Section', 'tabFee Invoice Batch Group',
+        'tabFee Invoice Batch Class', 'tabFee Invoice Batch', 'tabInvoice Title',
+        'tabFee Invoice Generator Component', 'tabFee Invoice Generator Section',
+        'tabFee Invoice Generator', 'tabInvoice Adjustment', 'tabFee Invoice Batch Category',
+        'tabFee Invoice Generator Class', 'tabFee Invoice Generator Group',
+        'tabCB Fee Payment Allocation', 'tabFee Template Component', 'tabFee Template Section',
+        'tabFee Template', 'tabFee Template Group', 'tabFee Head', 'tabFee Category',
+        'tabFee Template Class', 'tabTransport Fee Allocation', 'tabFee Component',
+        'tabFee Schedule', 'tabFee Structure', 'tabPayment Schedule', 'tabPayment Ledger Entry',
+        'tabPayment Entry Reference', 'tabPayment Entry', 'tabMode of Payment',
+        'tabCB Student Wallet', 'tabCB Wallet Transaction', 'tabCB Wallet Payment Allocation',
+        'tabGL Entry', 'tabAccount', 'tabSalary Component', 'tabCost Center',
+        'tabPrice List', 'tabItem Price', 'tabFee Group', 'tabStudent',
     ],
     "groups": [
-        'tabStudent Group',
-        'tabStudent Group Student',
-        'tabStudent Group Instructor',
-        'tabStudent Group Fee Template',
-        'tabStudent Group Subject',
-        'tabStudent Group Transfer',
-        'tabSection',
-        'tabClass',
-        'tabSchool Branch',
-        'tabSchool House',
-        'tabStudent',
-        'tabInstructor',
+        'tabStudent Group', 'tabStudent Group Student', 'tabStudent Group Instructor',
+        'tabStudent Group Fee Template', 'tabStudent Group Subject', 'tabStudent Group Transfer',
+        'tabSection', 'tabClass', 'tabSchool Branch', 'tabSchool House', 'tabStudent', 'tabInstructor',
     ],
     "courses": [
-        'tabCourse',
-        'tabCourse Enrollment',
-        'tabCourse Schedule',
-        'tabCourse Topic',
-        'tabCourse Assessment Criteria',
-        'tabProgram',
-        'tabProgram Course',
-        'tabProgram Enrollment',
-        'tabProgram Enrollment Course',
-        'tabProgram Enrollment Fee',
-        'tabProgram Fee',
-        'tabAcademic Year',
-        'tabAcademic Term',
-        'tabAssessment Plan',
-        'tabAssessment Plan Criteria',
-        'tabAssessment Result',
-        'tabAssessment Result Detail',
-        'tabAssessment Criteria',
-        'tabAssessment Group',
-        'tabGrading Scale',
-        'tabStudy Material',
-        'tabStudent',
+        'tabCourse', 'tabCourse Enrollment', 'tabCourse Schedule', 'tabCourse Topic',
+        'tabCourse Assessment Criteria', 'tabProgram', 'tabProgram Course',
+        'tabProgram Enrollment', 'tabProgram Enrollment Course', 'tabProgram Enrollment Fee',
+        'tabProgram Fee', 'tabAcademic Year', 'tabAcademic Term', 'tabAssessment Plan',
+        'tabAssessment Plan Criteria', 'tabAssessment Result', 'tabAssessment Result Detail',
+        'tabAssessment Criteria', 'tabAssessment Group', 'tabGrading Scale', 'tabStudy Material', 'tabStudent',
     ],
     "instructors": [
-        'tabInstructor',
-        'tabInstructor Log',
-        'tabStudent Group Instructor',
-        'tabStudent Group',
-        'tabCourse Schedule',
-        'tabTimetable Periods',
-        'tabTimetable Substitution',
-        'tabRoom',
-        'tabEmployee',
-        'tabDepartment',
-        'tabDesignation',
-        'tabStudent',
+        'tabInstructor', 'tabInstructor Log', 'tabStudent Group Instructor',
+        'tabStudent Group', 'tabCourse Schedule', 'tabTimetable Periods',
+        'tabTimetable Substitution', 'tabRoom', 'tabEmployee', 'tabDepartment',
+        'tabDesignation', 'tabStudent',
     ],
     "announcements": [
-        'tabAnnouncement',
-        'tabAnnouncement Attachment',
-        'tabAnnouncement Class',
-        'tabAnnouncement Section',
-        'tabAnnouncement Student',
-        'tabAnnouncement Student Group',
-        'tabStudent Group',
-        'tabClass',
-        'tabSection',
-        'tabStudent',
+        'tabAnnouncement', 'tabAnnouncement Attachment', 'tabAnnouncement Class',
+        'tabAnnouncement Section', 'tabAnnouncement Student', 'tabAnnouncement Student Group',
+        'tabStudent Group', 'tabClass', 'tabSection', 'tabStudent',
     ],
     "assignments": [
-        'tabAssignment',
-        'tabAssignment Attachment',
-        'tabAssignment Section',
-        'tabAssignment Student',
-        'tabAssignment Student Group',
-        'tabStudent Group',
-        'tabCourse',
-        'tabStudent',
+        'tabAssignment', 'tabAssignment Attachment', 'tabAssignment Section',
+        'tabAssignment Student', 'tabAssignment Student Group', 'tabStudent Group',
+        'tabCourse', 'tabStudent',
     ],
 }
 
@@ -234,9 +139,43 @@ def root():
 def ask(q: Question):
     try:
         category = detect_category(q.question)
-        tables = TABLE_GROUPS[category]
-        ddl = get_ddl_for_tables(tables)
+        candidate_tables = TABLE_GROUPS[category]
 
+        # --- الخطوة الأولى: نسأل الموديل يحدد أسماء الجداول المطلوبة فقط ---
+        selection_message = client.messages.create(
+            model="claude-sonnet-4-5",
+            max_tokens=200, # مش محتاجين توكنز كتير هنا
+            messages=[{
+                "role": "user",
+                "content": f"""You are a school database expert using ERPNext.
+User's Question: {q.question}
+
+Given this list of available tables in the '{category}' category:
+{candidate_tables}
+
+Based on the question, which tables are absolutely necessary to query this data?
+Return ONLY a valid Python list of strings containing the table names, like this: ["tabTable1", "tabTable2"]
+Do not return any other text, explanations, or codeblocks."""
+            }]
+        )
+        
+        # تحويل رد الموديل لقائمة حقيقية في بايثون
+        selected_tables_str = selection_message.content[0].text.strip()
+        try:
+            # هنستخدم json.loads أو eval خفيف عشان نحول النص للـ Array
+            selected_tables = json.loads(selected_tables_str.replace("'", '"'))
+        except:
+            # خطة بديلة لو الموديل كتب كلام زيادة بالخطأ
+            selected_tables = [t for t in candidate_tables if t in selected_tables_str]
+        
+        # لو الموديل خاب أمله ومطلعش حاجة، هنخليه يرجع للمصفوفة كلها كأمان
+        if not selected_tables:
+            selected_tables = candidate_tables
+
+        # --- الخطوة الثانية: سحب الـ DDL للجداول المختارة فقط ---
+        ddl = get_ddl_for_tables(selected_tables)
+
+        # --- الخطوة الثالثة: توليد استعلام SQL النهائي ---
         message = client.messages.create(
             model="claude-sonnet-4-5",
             max_tokens=1024,
@@ -249,7 +188,7 @@ IMPORTANT RULES:
 - Always use backticks around table names with spaces.
 - Use LIKE '%value%' when searching for names or codes.
 
-Given these database tables:
+Given these database tables DDL:
 {ddl}
 
 Generate ONLY a MariaDB SQL query to answer: {q.question}
@@ -263,6 +202,7 @@ Return ONLY the SQL query, nothing else."""
         return {
             "question": q.question,
             "category": category,
+            "selected_tables": selected_tables, # حلوة تضيفها للـ response عشان تشوف الموديل اختار إيه
             "sql": sql,
             "data": data,
             "status": "ok"
